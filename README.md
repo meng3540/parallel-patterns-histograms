@@ -1,7 +1,7 @@
 
 # Histograms
 
-##Implementing and optimizing a CUDA-based histogram algorithm
+## Implementing and optimizing a CUDA-based histogram algorithm
 
 ### What is a Histogram?
 
