@@ -17,8 +17,6 @@ As a basis for this assignment a summary of histograms, and how they may be acce
 
 The algorithm for the basic implementation of a histogram in CUDA was provided by the course textbook: [Programming Massively Parallel Processors, 3rd Edition by Morgan Kaufmann](https://learning.oreilly.com/library/view/programming-massively-parallel/9780128119877/).
 
-First we make sure we have all the required libraries included:
-
 ```C++
 __global__ void calculateHisto(char* buffer, int* histo, int size, int numBins)
 {
@@ -37,9 +35,9 @@ __global__ void calculateHisto(char* buffer, int* histo, int size, int numBins)
 }
 ```
 
-The whole code can be found under the src folder.
+The whole code can be found [under the src folder] (/src/kernel.cu).
 
-In this implementation, the function takes in an array (the string of characters to take the histogram of), an output array that represents the histogram, a size parameter defining the size of the input array, and takes in the number of bins to sort into. **It should be noted that the basic algorithm does not account for binning multiple letters together, and only returns valid results for \26 bins; one per letter.**
+In this implementation, the function takes in an array (the string of characters to take the histogram of), an output array that represents the histogram, a size parameter defining the size of the input array, and takes in the number of bins to sort into. **It should be noted that the basic algorithm does not account for binning multiple letters together, and only returns valid results for 26 bins; one per letter.**
 
 The code defines some variables, namely i (the index for the current thread), sectSize (to split up the input array so each thread handles the right number of input elements so that all elements get processed) and a start variable (effectively the start offset in the input array for each thread to begin at).
 
@@ -49,7 +47,7 @@ int sectSize = (size - 1) / (blockDim.x * gridDim.x) + 1;
 int start = i * sectSize;
 ```
 
-The function then iterates over the section assigned to the thread and if the current loop will still be processing input data (as in if the start position plus the current K value is still referring to an array index within the input array; there is valid work for this thread to do), then we calculate the numerical position of the character in the alphabet. This is achieved by subtracting "a" from the value in the input array. If the letter is a the result is 0, if the letter is b then the result is 1, and so on. If this value is a valid alphabet letter (from 0 to the number of bins), the count in the corresponding bin is incremented by \1. As the computations are happening in parallel, it is possible that two threads may try to increment the same bin at the same time. This would cause an issue (race condition) and therefore the atomicAdd() function is used to ensure only one thread can perform an action on an address (bin) at a time.
+The function then iterates over the section assigned to the thread and if the current loop will still be processing input data (as in if the start position plus the current K value is still referring to an array index within the input array; there is valid work for this thread to do), then we calculate the numerical position of the character in the alphabet. This is achieved by subtracting "a" from the value in the input array. If the letter is a the result is 0, if the letter is b then the result is 1, and so on. If this value is a valid alphabet letter (from 0 to the number of bins), the count in the corresponding bin is incremented by 1\. As the computations are happening in parallel, it is possible that two threads may try to increment the same bin at the same time. This would cause an issue (race condition) and therefore the atomicAdd() function is used to ensure only one thread can perform an action on an address (bin) at a time.
 
 ```C++
 for (int k = 0; k < sectSize; k++) {
