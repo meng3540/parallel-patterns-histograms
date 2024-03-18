@@ -35,7 +35,7 @@ __global__ void calculateHisto(char* buffer, int* histo, int size, int numBins)
 }
 ```
 
-The whole code can be found [under the src folder] (/src/kernel.cu).
+The whole code can be found [under the src folder](/src/kernel.cu).
 
 In this implementation, the function takes in an array (the string of characters to take the histogram of), an output array that represents the histogram, a size parameter defining the size of the input array, and takes in the number of bins to sort into. **It should be noted that the basic algorithm does not account for binning multiple letters together, and only returns valid results for 26 bins; one per letter.**
 
@@ -91,4 +91,4 @@ The results of running the non-optimized kernel are depicted below:
 
 To optimize the 
 
-###### Portions of this document were written using Chat-GPT. All information has been reviewed and deemed accurate by the authors.
+###### A very small portion of this document contains content written by Chat-GPT. All information has been reviewed and deemed accurate by the authors.
