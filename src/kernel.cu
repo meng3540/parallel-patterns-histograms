@@ -86,8 +86,17 @@ int main()
     int blockSize = 32;
     int gridSize = ceil((float)file_length / blockSize); // adjust the gridSize calculation
 
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+
+    //Kernel Launch
+    cudaEventRecord(start, 0);
     calculateHisto << < gridSize, blockSize >> > (deviceInput, deviceHisto, file_length, numBins);
-    cudaDeviceSynchronize();
+    cudaEventRecord(stop, 0);
+    cudaEventSynchronize(stop);
+    float milliseconds = 0;
+    cudaEventElapsedTime(&milliseconds, start, stop);
 
     cudaMemcpy(histo, deviceHisto, binSize, cudaMemcpyDeviceToHost);
 
@@ -96,6 +105,9 @@ int main()
     for (int i = 0; i < numBins; ++i) {
         printf("%c: %d\n", 'a' + i, histo[i]);
     }
+
+    printf("\n");
+    printf("The kernel took %.2f milliseconds to execute.\n", milliseconds);
 
     cudaFree(deviceInput);
     cudaFree(deviceHisto);
