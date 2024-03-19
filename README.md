@@ -35,7 +35,7 @@ __global__ void calculateHisto(char* buffer, int* histo, int size, int numBins)
 }
 ```
 
-The whole code can be found [under the src folder](/src/kernel.cu).
+The whole code can be found [under the src folder](/src/kernel_noOptim.cu).
 
 In this implementation, the function takes in an array (the string of characters to take the histogram of), an output array that represents the histogram, a size parameter defining the size of the input array, and takes in the number of bins to sort into. **It should be noted that the basic algorithm does not account for binning multiple letters together, and only returns valid results for 26 bins; one per letter.**
 
@@ -89,6 +89,18 @@ The results of running the non-optimized kernel are depicted below:
 
 ### Optimizations
 
-To optimize the 
+Currently, all the operations in our algorithm are reading and writing to global memory. This is perhaps the easiest memory to work with as it is large and accessible by every thread, however it is very slow and leads to a lot of memory access latency. To increase the throughput of our atomic operations, utilizing the shared memory would be much better. This memory is smaller, but many times faster than the global memory. By using shared memory, a new problem will also emerge, only threads in the same block can access the same shared memory. As our code will launch multiple blocks, all our atomic operations cannot store their results in the same location and we will need to work around this.
+
+First, however, we will implement the prioritized memory for each thread. This is relatively simple, as we can define a temporary histogram array in the shared memory
+
+```C++
+code
+```
+
+We can then generate our histogram as before. Once all the threads in the block finish, we simply need to add the privatized histogram to the overall histogram result.
+
+```C++
+code
+```
 
 ###### A very small portion of this document contains content written by Chat-GPT. All information has been reviewed and deemed accurate by the authors.

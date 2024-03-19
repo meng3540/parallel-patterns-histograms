@@ -12,13 +12,23 @@ __global__ void calculateHisto(char* buffer, int* histo, int size, int numBins)
     int sectSize = (size - 1) / (blockDim.x * gridDim.x) + 1;
     int start = i * sectSize;
 
+    extern __shared__ unsigned int histos[];
+    for (int binIdx = threadIdx.x; binIdx < numBins; binIdx += blockDim.x) {
+        histos[binIdx] = 0u;
+    }
+    __syncthreads();
+
     for (int k = 0; k < sectSize; k++) {
         if (start + k < size) {
             int alphaPos = buffer[start + k] - 'a';
             if (alphaPos >= 0 && alphaPos < numBins) {
-                atomicAdd(&(histo[alphaPos]), 1);
+                atomicAdd(&(histos[alphaPos]), 1);
             }
         }
+    }
+    __syncthreads();
+    for (int binIdx = threadIdx.x; binIdx < numBins; binIdx += blockDim.x) {
+        atomicAdd(&(histo[binIdx]),histos[binIdx]);
     }
 }
 
@@ -28,8 +38,11 @@ int main()
     char* buffer;
     long file_length;
 
+    //Allow debugging of input by printing out input text. Very slow on large files so disabled by default.
+    int previewInput = 0;
+
     // Open the file for reading
-    file = fopen("lorem.txt", "r");
+    file = fopen("enwik8", "rb");
     if (file == NULL) {
         fprintf(stderr, "Error opening file\n");
         return 1;
@@ -57,9 +70,14 @@ int main()
     //Define and get size of input
     char* input = buffer;
 
-    printf(input);
-    printf("\n");
+    if (previewInput) {
+        printf("Input File:\n");
+        for (int i = 0; i < file_length; ++i) {
+            printf("%c", buffer[i]);
+        }
 
+        printf("\n\n");
+    }
     //size_t inputSize = sizeof(input) - 1; // excluding null terminator
     
     //Define number of bins
@@ -87,6 +105,7 @@ int main()
     int gridSize = ceil((float)file_length / blockSize); // adjust the gridSize calculation
 
     cudaEvent_t start, stop;
+    float milliseconds = 0;
     cudaEventCreate(&start);
     cudaEventCreate(&stop);
 
@@ -95,7 +114,6 @@ int main()
     calculateHisto << < gridSize, blockSize >> > (deviceInput, deviceHisto, file_length, numBins);
     cudaEventRecord(stop, 0);
     cudaEventSynchronize(stop);
-    float milliseconds = 0;
     cudaEventElapsedTime(&milliseconds, start, stop);
 
     cudaMemcpy(histo, deviceHisto, binSize, cudaMemcpyDeviceToHost);
