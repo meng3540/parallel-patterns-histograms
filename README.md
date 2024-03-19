@@ -89,18 +89,28 @@ The results of running the non-optimized kernel are depicted below:
 
 ### Optimizations
 
+###TODO: Add Interleve optimization
+
+### Privatization Optimization
 Currently, all the operations in our algorithm are reading and writing to global memory. This is perhaps the easiest memory to work with as it is large and accessible by every thread, however it is very slow and leads to a lot of memory access latency. To increase the throughput of our atomic operations, utilizing the shared memory would be much better. This memory is smaller, but many times faster than the global memory. By using shared memory, a new problem will also emerge, only threads in the same block can access the same shared memory. As our code will launch multiple blocks, all our atomic operations cannot store their results in the same location and we will need to work around this.
 
 First, however, we will implement the prioritized memory for each thread. This is relatively simple, as we can define a temporary histogram array in the shared memory
 
 ```C++
-code
+extern __shared__ unsigned int histos[];
+for (int binIdx = threadIdx.x; binIdx < numBins; binIdx += blockDim.x) {
+    histos[binIdx] = 0u;
+}
+__syncthreads();
 ```
 
-We can then generate our histogram as before. Once all the threads in the block finish, we simply need to add the privatized histogram to the overall histogram result.
+We can then generate our histogram as before. Once all the threads in the block finish, we simply need to add the privatized histograms from each block to the overall histogram result.
 
 ```C++
-code
+__syncthreads();
+for (int binIdx = threadIdx.x; binIdx < numBins; binIdx += blockDim.x) {
+    atomicAdd(&(histo[binIdx]),histos[binIdx]);
+}
 ```
 
 ###### A very small portion of this document contains content written by Chat-GPT. All information has been reviewed and deemed accurate by the authors.
