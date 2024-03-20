@@ -1,1 +1,2 @@
 E:\Dropbox\Humber\Semester 6\Parallel Programming\Assignment\AsssignmentStrategy1\x64\Debug\AsssignmentStrategy1.exe
+E:\Dropbox\Humber\Semester 6\Parallel Programming\Assignment\Git\parallel-patterns-histograms\src\Interleaving_Privitization\x64\Debug\Interleaving_Privitization.exe
