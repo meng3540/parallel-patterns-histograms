@@ -5,12 +5,11 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string>
+#include <ctype.h>
 
 __global__ void calculateHisto(char* buffer, int* histo, int size, int numBins)
 {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
-    int sectSize = (size - 1) / (blockDim.x * gridDim.x) + 1;
-    int start = i * sectSize;
 
     extern __shared__ unsigned int histos[];
     for (int binIdx = threadIdx.x; binIdx < numBins; binIdx += blockDim.x) {
@@ -18,14 +17,13 @@ __global__ void calculateHisto(char* buffer, int* histo, int size, int numBins)
     }
     __syncthreads();
 
-    for (int k = 0; k < sectSize; k++) {
-        if (start + k < size) {
-            int alphaPos = buffer[start + k] - 'a';
-            if (alphaPos >= 0 && alphaPos < numBins) {
-                atomicAdd(&(histos[alphaPos]), 1);
-            }
+    for (int k = i; k < size; k+=blockDim.x*gridDim.x) {
+        int alphaPos = buffer[k] - 'a';
+        if (alphaPos >= 0 && alphaPos < numBins) {
+            atomicAdd(&(histos[alphaPos]), 1);
         }
     }
+
     __syncthreads();
     for (int binIdx = threadIdx.x; binIdx < numBins; binIdx += blockDim.x) {
         atomicAdd(&(histo[binIdx]),histos[binIdx]);
@@ -41,8 +39,11 @@ int main()
     //Allow debugging of input by printing out input text. Very slow on large files so disabled by default.
     int previewInput = 0;
 
+    //Enable conversion to all lowercase for input file.
+    int forceLower = 1;
+
     // Open the file for reading
-    file = fopen("enwik8", "rb");
+    file = fopen("lorem.txt", "rb");
     if (file == NULL) {
         fprintf(stderr, "Error opening file\n");
         return 1;
@@ -69,6 +70,13 @@ int main()
     
     //Define and get size of input
     char* input = buffer;
+
+    //for the purposes of this assignment we will convert all characters to lowercase so their frequency may be accurately reported. Disabled if forceLower = 0
+    if (forceLower) {
+        for (int i = 0; i < file_length; ++i) {
+            buffer[i] = tolower(buffer[i]);
+        }
+    }
 
     if (previewInput) {
         printf("Input File:\n");

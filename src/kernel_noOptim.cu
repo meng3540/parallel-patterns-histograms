@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string>
+#include <ctype.h>
 
 __global__ void calculateHisto(char* buffer, int* histo, int size, int numBins)
 {
@@ -30,6 +31,9 @@ int main()
 
     //Allow debugging of input by printing out input text. Very slow on large files so disabled by default.
     int previewInput = 0;
+	
+	//Enable conversion to all lowercase for input file.
+	int forceLower = 1;
 
     // Open the file for reading
     file = fopen("enwik8", "rb");
@@ -59,6 +63,13 @@ int main()
     
     //Define and get size of input
     char* input = buffer;
+
+	//for the purposes of this assignment we will convert all characters to lowercase so their frequency may be accurately reported. Disabled if forceLower = 0
+	if (forceLower) {
+		for (int i = 0; i < file_length; ++i) {
+			buffer[i] = tolower(buffer[i]);
+		}
+	}
 
     if (previewInput) {
         printf("Input File:\n");
