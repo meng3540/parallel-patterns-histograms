@@ -46,7 +46,7 @@ int main()
 	int forceLower = 1;
 
     // Open the file for reading
-    file = fopen("enwik8", "rb");
+    file = fopen("../enwik8", "rb");
     if (file == NULL) {
         fprintf(stderr, "Error opening file\n");
         return 1;
@@ -112,7 +112,7 @@ int main()
     cudaMemcpy(deviceInput, input, file_length, cudaMemcpyHostToDevice);
     cudaMemcpy(deviceHisto, histo, binSize, cudaMemcpyHostToDevice);
 
-    int blockSize = 32;
+    int blockSize = 128;
     int gridSize = ceil((float)file_length / blockSize); // adjust the gridSize calculation
 
     cudaEvent_t start, stop;

@@ -85,15 +85,25 @@ printf("The kernel took %.2f milliseconds to execute.\n", milliseconds);
 
 The results of running the un-optimized kernel are depicted below:
 
-![Histogram of Lorem Ipsum](/res/NoOptim_Time.png "Kernel Runtime without optimization: 114ms")
+![Histogram of enwik8](/res/NoOptim_Time.png "Kernel Runtime without optimization: 30.54ms")
 
 ## Optimizations
+
+### Block Size Optimization
+
+The block size usually has a major impact on performance for parallel processes. Launching too many or too few threads per block can lead to issues with occupancy (the ratio of the number of active warps to the maximum supported number) as well as other issues such as exhausting limited resources like registers and shared memory. Our code first used 32 threads per block. Using the occupancy calculator in Nsight, we can see that the optimum number of threads per block suggested by NSight is between 80-128, however we will choose 128 as it is a multiple of 32 (the warp size).
+
+![Occupancy Calculator](/res/NoOptim_OccCalc.png "Suggested thread count for maximum occupancy")
+
+After setting out thread count to 128, we can see there is a bit of an improvement, however we other optimizations to implement for further improvement.
+
+![Histogram of enwik8](/res/NoOptim_Time128.png "Kernel Runtime without optimization: 30.54ms")
 
 ### Interleaved Partitioning
 
 Our un-optimized kernel partitioned the input data into chunks and assigned one chunk per thread. This is not memory efficient as each thread has to make a memory call to get its data as the data is non-consecutive. To improve this, we can restructure the code to assign the available threads consecutive data from the input. This means only one memory access is required to load the data needed by the threads, resulting in fewer memory accesses and better throughput.
 
-The modefied kernel is as follows:
+The modified kernel is as follows:
 ```C++
 __global__ void calculateHisto(char* buffer, int* histo, int size, int numBins)
 {
