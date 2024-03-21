@@ -95,13 +95,21 @@ The block size usually has a major impact on performance for parallel processes.
 
 ![Occupancy Calculator](/res/NoOptim_OccCalc.png "Suggested thread count for maximum occupancy")
 
-After setting out thread count to 128, we can see there is a bit of an improvement, however we other optimizations to implement for further improvement.
+After setting our thread count to 128, we can see there is a bit of an improvement, however we have other optimizations to implement for further improvement.
 
 ![Histogram of enwik8](/res/NoOptim_Time128.png "Kernel Runtime without optimization: 30.54ms")
 
 ### Interleaved Partitioning
 
-Our un-optimized kernel partitioned the input data into chunks and assigned one chunk per thread. This is not memory efficient as each thread has to make a memory call to get its data as the data is non-consecutive. To improve this, we can restructure the code to assign the available threads consecutive data from the input. This means only one memory access is required to load the data needed by the threads, resulting in fewer memory accesses and better throughput.
+Our un-optimized kernel partitioned the input data into chunks and assigned one chunk per thread. This is not memory efficient as each thread has to make a memory call each iteration to get its data as the data is non-consecutive. 
+
+To illustrate this, the first two iterations of the kernel will look something like this:
+
+![Block Partitioning Diagram](/res/BlockPartitioning.jpg "Block Partitioning Diagram")
+
+To improve this, we can restructure the code to assign the available threads consecutive data from the input. This means only one memory access is required to load the data needed by the threads, resulting in fewer memory accesses and better throughput.
+
+![Interleaved Partitioning Diagram](/res/InterleavedPartitioning.jpg "Interleaved Partitioning Diagram")
 
 The modified kernel is as follows:
 ```C++
@@ -109,22 +117,11 @@ __global__ void calculateHisto(char* buffer, int* histo, int size, int numBins)
 {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
 
-    extern __shared__ unsigned int histos[];
-    for (int binIdx = threadIdx.x; binIdx < numBins; binIdx += blockDim.x) {
-        histos[binIdx] = 0u;
-    }
-    __syncthreads();
-
     for (int k = i; k < size; k+=blockDim.x*gridDim.x) {
         int alphaPos = buffer[k] - 'a';
         if (alphaPos >= 0 && alphaPos < numBins) {
             atomicAdd(&(histos[alphaPos]), 1);
         }
-    }
-
-    __syncthreads();
-    for (int binIdx = threadIdx.x; binIdx < numBins; binIdx += blockDim.x) {
-        atomicAdd(&(histo[binIdx]),histos[binIdx]);
     }
 }
 ```
@@ -152,5 +149,37 @@ for (int binIdx = threadIdx.x; binIdx < numBins; binIdx += blockDim.x) {
 }
 ```
 
+### Combined
+
+Alone, each optimization provides some improvement to the performance, although no one optimization appears to provide drastic improvement. However, all three optimizations can be combined to much greater effect. The kernel with the optimizations is shown below, and our optimized block size of 128 is kept although not shown here.
+
+```C++
+__global__ void calculateHisto(char* buffer, int* histo, int size, int numBins)
+{
+    int i = threadIdx.x + blockIdx.x * blockDim.x;
+
+    extern __shared__ unsigned int histos[];
+    for (int binIdx = threadIdx.x; binIdx < numBins; binIdx += blockDim.x) {
+        histos[binIdx] = 0u;
+    }
+    __syncthreads();
+
+    for (int k = i; k < size; k+=blockDim.x*gridDim.x) {
+        int alphaPos = buffer[k] - 'a';
+        if (alphaPos >= 0 && alphaPos < numBins) {
+            atomicAdd(&(histos[alphaPos]), 1);
+        }
+    }
+
+    __syncthreads();
+    for (int binIdx = threadIdx.x; binIdx < numBins; binIdx += blockDim.x) {
+        atomicAdd(&(histo[binIdx]),histos[binIdx]);
+    }
+}
+```
+
+By implementing both optimizations, we can see the combined effect is much greater than those of the individual optimizations.
+
+![Optimized Histogram of enwik8](/res/Optim.png "Kernel Runtime with both optimizations: 11.87ms")
 
 ###### A very small portion of this document contains content written by Chat-GPT. All information has been reviewed and deemed accurate by the authors.
