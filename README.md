@@ -111,6 +111,10 @@ To improve this, we can restructure the code to assign the available threads con
 
 ![Interleaved Partitioning Diagram](/res/InterleavedPartitioning.jpg "Interleaved Partitioning Diagram")
 
+After running the program, we can see that there is some improvement over the base time:
+
+![Interleaved Partitioning Timing](/res/InterleavingTime.png "Interleaved Partitioning Time")
+
 The modified kernel is as follows:
 ```C++
 __global__ void calculateHisto(char* buffer, int* histo, int size, int numBins)
