@@ -153,6 +153,9 @@ for (int binIdx = threadIdx.x; binIdx < numBins; binIdx += blockDim.x) {
 }
 ```
 
+We can see that after adding the privatization method, the speed has drastically improved:
+![Privatization Timing](/res/Privitization_Time.png "Privatization Time")
+
 ### Combined
 
 Alone, each optimization provides some improvement to the performance, although no one optimization appears to provide drastic improvement. However, all three optimizations can be combined to much greater effect. The kernel with the optimizations is shown below, and our optimized block size of 128 is kept although not shown here.
