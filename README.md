@@ -111,7 +111,7 @@ To improve this, we can restructure the code to assign the available threads con
 
 ![Interleaved Partitioning Diagram](/res/InterleavedPartitioning.jpg "Interleaved Partitioning Diagram")
 
-After running the program, we can see that there is some improvement over the base time:
+After running the program, we can see that there is little to no improvement over the base time:
 
 ![Interleaved Partitioning Timing](/res/InterleavingTime.png "Interleaved Partitioning Time")
 
